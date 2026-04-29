@@ -1,0 +1,11 @@
+package server
+
+import "github.com/gin-gonic/gin"
+
+func AddOpenRoutes(group *gin.RouterGroup) {
+	group.GET("/", func(ctx *gin.Context) {
+		ctx.JSON(200, gin.H{
+			"serving": "gin",
+		})
+	})
+}
