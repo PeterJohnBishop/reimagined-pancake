@@ -1,11 +1,24 @@
 package server
 
-import "github.com/gin-gonic/gin"
+import (
+	"database/sql"
+	"reimagined-pancake/server/users"
 
-func AddOpenRoutes(group *gin.RouterGroup) {
-	group.GET("/", func(ctx *gin.Context) {
+	"github.com/gin-gonic/gin"
+)
+
+func AddOpenRoutes(open *gin.RouterGroup, db *sql.DB) {
+	open.GET("/", func(ctx *gin.Context) {
 		ctx.JSON(200, gin.H{
 			"serving": "gin",
 		})
 	})
+	open.POST("/signup", func(ctx *gin.Context) {})
+	open.POST("/singin", func(ctx *gin.Context) {
+		users.LoginHandler(ctx, db)
+	})
+}
+
+func AddProtectedRoutes(protected *gin.RouterGroup, db *sql.DB) {
+	//
 }

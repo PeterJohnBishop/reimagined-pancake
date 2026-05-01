@@ -1,9 +1,11 @@
 package server
 
 import (
+	"database/sql"
 	"fmt"
 	"log"
 	"os"
+	"reimagined-pancake/server/auth"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -11,7 +13,7 @@ import (
 
 // a basic Gin server with logging.
 
-func ServeGin() {
+func ServeGin(db *sql.DB) {
 	log.Println("Serving Gin.")
 
 	gin.SetMode(gin.ReleaseMode)
@@ -32,7 +34,10 @@ func ServeGin() {
 	r.Use(gin.Recovery())
 
 	v1 := r.Group("/v1")
-	AddOpenRoutes(v1)
+	AddOpenRoutes(v1, db)
+
+	protected := r.Group("/v1/api")
+	protected.Use(auth.JWTAuth())
 
 	port := os.Getenv("PORT")
 	if port == "" {

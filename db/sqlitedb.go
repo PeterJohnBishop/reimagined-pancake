@@ -1,8 +1,13 @@
-package main
+package database
 
 import (
+	"context"
 	"database/sql"
+	"errors"
 	"fmt"
+	"reimagined-pancake/global"
+
+	"github.com/mattn/go-sqlite3"
 )
 
 const schema = `
@@ -13,10 +18,10 @@ CREATE TABLE IF NOT EXISTS payloads (
 );
 
 CREATE TABLE IF NOT EXISTS users (
-	id TEXT PRIMARY KEY,
-	username TEXT UNIQUE NOT NULL,
-	email TEXT UNIQUE NOT NULL,
-	hashed_password TEXT NOT NULL
+    id TEXT PRIMARY KEY,
+    username TEXT UNIQUE NOT NULL,
+    email TEXT UNIQUE NOT NULL,
+    password TEXT NOT NULL
 );
 `
 
@@ -24,63 +29,57 @@ type DB struct {
 	*sql.DB
 }
 
-type Payload struct {
-	ID      string
-	Event   string
-	RawData string
-}
+var (
+	ErrEmailAlreadyExists = errors.New("email address (or username) is already in use")
+	ErrUserNotFound       = errors.New("user not found")
+	ErrPayloadNotFound    = errors.New("payload not found")
+)
 
-type User struct {
-	ID             string
-	Username       string
-	Email          string
-	HashedPassword string
-}
-
-func InitDB(filepath string) (*DB, error) {
-	db, err := sql.Open("sqlite", filepath)
+func InitDB(ctx context.Context, filepath string) (*sql.DB, error) {
+	// Note: mattn/go-sqlite3 registers as "sqlite3", not "sqlite"
+	db, err := sql.Open("sqlite3", filepath)
 	if err != nil {
 		return nil, err
 	}
 
-	if _, err := db.Exec(schema); err != nil {
+	if _, err := db.ExecContext(ctx, schema); err != nil {
 		return nil, fmt.Errorf("failed to initialize schema: %w", err)
 	}
 
-	return &DB{db}, nil
+	return db, nil
 }
 
-func (db *DB) SavePayload(p Payload) error {
+func SavePayload(db *sql.DB, ctx context.Context, p global.Payload) error {
 	query := `INSERT INTO payloads (id, event, raw_data) VALUES (?, ?, ?)`
-	_, err := db.Exec(query, p.ID, p.Event, p.RawData)
+	_, err := db.ExecContext(ctx, query, p.ID, p.Event, p.RawData)
 	return err
 }
 
-func (db *DB) GetPayloadByID(id string) (*Payload, error) {
+func GetPayloadByID(db *sql.DB, ctx context.Context, id string) (*global.Payload, error) {
 	query := `SELECT id, event, raw_data FROM payloads WHERE id = ?`
-	row := db.QueryRow(query, id)
+	row := db.QueryRowContext(ctx, query, id)
 
-	var p Payload
+	var p global.Payload
 	if err := row.Scan(&p.ID, &p.Event, &p.RawData); err != nil {
-		if err == sql.ErrNoRows {
-			return nil, fmt.Errorf("payload with id %s not found", id)
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, fmt.Errorf("%w: id %s", ErrPayloadNotFound, id)
 		}
 		return nil, err
 	}
 	return &p, nil
 }
 
-func (db *DB) GetAllPayloads() ([]Payload, error) {
+func GetAllPayloads(db *sql.DB, ctx context.Context) ([]global.Payload, error) {
 	query := `SELECT id, event, raw_data FROM payloads`
-	rows, err := db.Query(query)
+	rows, err := db.QueryContext(ctx, query)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var payloads []Payload
+	var payloads []global.Payload
 	for rows.Next() {
-		var p Payload
+		var p global.Payload
 		if err := rows.Scan(&p.ID, &p.Event, &p.RawData); err != nil {
 			return nil, err
 		}
@@ -93,44 +92,69 @@ func (db *DB) GetAllPayloads() ([]Payload, error) {
 	return payloads, nil
 }
 
-func (db *DB) DeletePayloadByID(id string) error {
+func DeletePayloadByID(db *sql.DB, ctx context.Context, id string) error {
 	query := `DELETE FROM payloads WHERE id = ?`
-	_, err := db.Exec(query, id)
+	_, err := db.ExecContext(ctx, query, id)
 	return err
 }
 
-func (db *DB) SaveUser(u User) error {
-	query := `INSERT INTO users (id, username, email, hashed_password) VALUES (?, ?, ?, ?)`
-	_, err := db.Exec(query, u.ID, u.Username, u.Email, u.HashedPassword)
-	return err
+func SaveUser(db *sql.DB, ctx context.Context, u global.User) error {
+	query := `INSERT INTO users (id, username, email, password) VALUES (?, ?, ?, ?)`
+	_, err := db.ExecContext(ctx, query, u.ID, u.Username, u.Email, u.Password)
+	if err != nil {
+		var sqliteErr sqlite3.Error
+		if errors.As(err, &sqliteErr) {
+			if sqliteErr.ExtendedCode == sqlite3.ErrConstraintUnique {
+				// Note: This could trigger for duplicate email OR duplicate username
+				return ErrEmailAlreadyExists
+			}
+		}
+		return fmt.Errorf("failed to insert user: %w", err)
+	}
+
+	return nil
 }
 
-func (db *DB) GetUserByID(id string) (*User, error) {
-	query := `SELECT id, username, email, hashed_password FROM users WHERE id = ?`
-	row := db.QueryRow(query, id)
+func GetUserByID(db *sql.DB, ctx context.Context, id string) (*global.User, error) {
+	query := `SELECT id, username, email, password FROM users WHERE id = ?`
+	row := db.QueryRowContext(ctx, query, id)
 
-	var u User
-	if err := row.Scan(&u.ID, &u.Username, &u.Email, &u.HashedPassword); err != nil {
-		if err == sql.ErrNoRows {
-			return nil, fmt.Errorf("user with id %s not found", id)
+	var u global.User
+	if err := row.Scan(&u.ID, &u.Username, &u.Email, &u.Password); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, fmt.Errorf("%w: id %s", ErrUserNotFound, id)
 		}
 		return nil, err
 	}
 	return &u, nil
 }
 
-func (db *DB) GetAllUsers() ([]User, error) {
-	query := `SELECT id, username, email, hashed_password FROM users`
-	rows, err := db.Query(query)
+func GetUserByEmail(db *sql.DB, ctx context.Context, email string) (*global.User, error) {
+	query := `SELECT id, username, email, password FROM users WHERE email = ?`
+	row := db.QueryRowContext(ctx, query, email)
+
+	var u global.User
+	if err := row.Scan(&u.ID, &u.Username, &u.Email, &u.Password); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, fmt.Errorf("%w: email %s", ErrUserNotFound, email)
+		}
+		return nil, err
+	}
+	return &u, nil
+}
+
+func GetAllUser(db *sql.DB, ctx context.Context) ([]global.User, error) {
+	query := `SELECT id, username, email, password FROM users`
+	rows, err := db.QueryContext(ctx, query)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var users []User
+	var users []global.User
 	for rows.Next() {
-		var u User
-		if err := rows.Scan(&u.ID, &u.Username, &u.Email, &u.HashedPassword); err != nil {
+		var u global.User
+		if err := rows.Scan(&u.ID, &u.Username, &u.Email, &u.Password); err != nil {
 			return nil, err
 		}
 		users = append(users, u)
@@ -142,11 +166,18 @@ func (db *DB) GetAllUsers() ([]User, error) {
 	return users, nil
 }
 
-func (db *DB) UpdateUserByID(id string, u User) error {
-	query := `UPDATE users SET username = ?, email = ?, hashed_password = ? WHERE id = ?`
-	res, err := db.Exec(query, u.Username, u.Email, u.HashedPassword, id)
+func UpdateUserByID(db *sql.DB, ctx context.Context, id string, u global.User) error {
+	query := `UPDATE users SET username = ?, email = ?, password = ? WHERE id = ?`
+	res, err := db.ExecContext(ctx, query, u.Username, u.Email, u.Password, id)
 	if err != nil {
-		return err
+		// Also catch unique constraint here, in case they update to an existing email/username
+		var sqliteErr sqlite3.Error
+		if errors.As(err, &sqliteErr) {
+			if sqliteErr.ExtendedCode == sqlite3.ErrConstraintUnique {
+				return ErrEmailAlreadyExists
+			}
+		}
+		return fmt.Errorf("failed to update user: %w", err)
 	}
 
 	rowsAffected, err := res.RowsAffected()
@@ -154,14 +185,14 @@ func (db *DB) UpdateUserByID(id string, u User) error {
 		return err
 	}
 	if rowsAffected == 0 {
-		return fmt.Errorf("no user found with id %s", id)
+		return fmt.Errorf("%w: id %s", ErrUserNotFound, id)
 	}
 
 	return nil
 }
 
-func (db *DB) DeleteUserByID(id string) error {
+func DeleteUserByID(db *sql.DB, ctx context.Context, id string) error {
 	query := `DELETE FROM users WHERE id = ?`
-	_, err := db.Exec(query, id)
+	_, err := db.ExecContext(ctx, query, id)
 	return err
 }
