@@ -14,8 +14,6 @@ import (
 // a basic Gin server with logging.
 
 func ServeGin(db *sql.DB) {
-	log.Println("Serving Gin.")
-
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
 	r.Use(gin.LoggerWithFormatter(func(param gin.LogFormatterParams) string {

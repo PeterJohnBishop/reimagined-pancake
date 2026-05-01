@@ -14,7 +14,7 @@ func AddOpenRoutes(open *gin.RouterGroup, db *sql.DB) {
 		})
 	})
 	open.POST("/signup", func(ctx *gin.Context) {})
-	open.POST("/singin", func(ctx *gin.Context) {
+	open.POST("/login", func(ctx *gin.Context) {
 		users.LoginHandler(ctx, db)
 	})
 }

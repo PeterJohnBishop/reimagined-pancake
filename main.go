@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"log"
-	database "reimagined-pancake/db"
+	database "reimagined-pancake/database"
 	"reimagined-pancake/server"
 
 	"github.com/joho/godotenv"
