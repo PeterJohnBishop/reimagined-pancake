@@ -1,0 +1,17 @@
+services:
+  db:
+    image: postgres:18
+    container_name: local-pg-18
+    restart: always
+    environment:
+      POSTGRES_USER: ${PG_USER}
+      POSTGRES_PASSWORD: ${PG_PASSWORD}
+      POSTGRES_DB: ${PG_DB}
+    ports:
+      - "${PG_PORT:-5432}:5432"
+    volumes:
+      # CHANGED: Mount one level higher
+      - pg18-data:/var/lib/postgresql
+
+volumes:
+  pg18-data:

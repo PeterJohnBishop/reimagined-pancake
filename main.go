@@ -1,10 +1,8 @@
 package main
 
 import (
-	"context"
 	"database/sql"
 	"log"
-	database "reimagined-pancake/database"
 	"reimagined-pancake/server"
 
 	"github.com/joho/godotenv"
@@ -18,7 +16,5 @@ func main() {
 		log.Fatal("Error loading .env file")
 	}
 
-	ctx := context.Background()
-	db, err := database.InitDB(ctx, "data.db")
-	server.ServeGin(db)
+	server.ServeGin()
 }
