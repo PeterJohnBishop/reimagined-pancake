@@ -3,13 +3,16 @@ package database
 import (
 	"database/sql"
 	"fmt"
-	"log"
 	"os"
 
 	_ "github.com/lib/pq"
 )
 
-func ConnectPGDB() {
+type DBStore struct {
+	DB *sql.DB
+}
+
+func ConnectPGDB() (*DBStore, error) {
 	host := os.Getenv("PG_HOST")
 	port := os.Getenv("PG_PORT")
 	user := os.Getenv("PG_USER")
@@ -21,14 +24,15 @@ func ConnectPGDB() {
 
 	db, err := sql.Open("postgres", psqlInfo)
 	if err != nil {
-		log.Fatalf("Failed to open database object: %v\n", err)
+		return nil, err
 	}
-	defer db.Close()
 
 	err = db.Ping()
 	if err != nil {
-		log.Fatalf("Failed to connect to the database server: %v\n", err)
+		return nil, err
 	}
 
 	fmt.Println("Successfully connected to the PostgreSQL Docker container!")
+
+	return &DBStore{DB: db}, nil
 }
