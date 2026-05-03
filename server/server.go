@@ -19,6 +19,12 @@ func ServeGin() {
 	}
 	defer store.DB.Close()
 
+	log.Println("Checking database tables...")
+	if err := store.CreateTables(); err != nil {
+		log.Fatalf("Failed to initialize database tables: %v\n", err)
+	}
+	log.Println("Database tables verified!")
+
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
 
