@@ -4,10 +4,10 @@
 docker compose up 
 
 <!-- Configure .env with connection variables -->
-    ## Gin Server
+    Gin Server
     PORT=
 
-    ## Database Credentials
+    Database Credentials
     PG_HOST=
     PG_PORT=
     PG_USER=
@@ -19,6 +19,8 @@ go run main.go
 
 <!-- Test CRUD operations and JWT authentication (/server/user_test.go)-->
 go test 
+
+![test screenshot](https://github.com/PeterJohnBishop/reimagined-pancake/blob/main/assets/screenshot-2026-05-03_01-33-46.png?raw=true)
 
 # open routes
 
