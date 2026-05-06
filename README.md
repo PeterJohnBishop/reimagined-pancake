@@ -18,9 +18,9 @@ docker compose up
 go run main.go
 
 <!-- Test CRUD operations and JWT authentication (/server/user_test.go)-->
-go test 
+cd tests && go test 
 
-![test screenshot](https://github.com/PeterJohnBishop/reimagined-pancake/blob/main/assets/screenshot-2026-05-03_01-33-46.png?raw=true)
+![test screenshot](https://github.com/PeterJohnBishop/reimagined-pancake/blob/main/assets/screenshot-2026-05-06_01-59-36.png?raw=true)
 
 # Open Routes
 
