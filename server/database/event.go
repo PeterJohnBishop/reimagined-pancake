@@ -11,7 +11,7 @@ import (
 type Event struct {
 	ID        uuid.UUID       `json:"id" db:"id"`
 	Timestamp time.Time       `json:"timestamp" db:"timestamp"`
-	EventType string          `json:"event-type" db:"event_type"`
+	EventType string          `json:"event_type" db:"event_type"`
 	Data      json.RawMessage `json:"data" db:"data"`
 }
 

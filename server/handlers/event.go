@@ -90,7 +90,7 @@ func DeleteEventHandler(store *database.DBStore) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		idParam := c.Param("id")
 		if idParam == "" {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "ID param must not be empty."})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "ID param muast not be empty."})
 		}
 
 		id, err := uuid.Parse(idParam)

@@ -47,7 +47,7 @@ func (store *DBStore) CreateTables() error {
 		created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 	);
 	
-	CREATE TABLE IT NOT EXISTS events (
+	CREATE TABLE IF NOT EXISTS events (
 		id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     timestamp TIMESTAMPTZ DEFAULT NOW(),    
     event_type VARCHAR(255) NOT NULL,       
