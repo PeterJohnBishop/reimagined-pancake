@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"encoding/json"
 	"log"
 	"net/http"
 	"os"
@@ -37,7 +36,7 @@ func ServeGin() {
 	var wg sync.WaitGroup
 
 	wg.Add(1)
-	go processPayloads(payloadChan, &wg)
+	go webhook.ProcessPayloads(payloadChan, &wg)
 
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
@@ -93,19 +92,4 @@ func ServeGin() {
 	}
 
 	log.Println("Server exiting")
-}
-
-func processPayloads(ch <-chan webhook.Payload, wg *sync.WaitGroup) {
-	defer wg.Done()
-
-	for p := range ch {
-		var payload map[string]interface{}
-		err := json.Unmarshal(p.Data, &payload)
-		if err != nil {
-			log.Printf("Error: failed to unmarshal the payload")
-		}
-		log.Printf("Processing payload asynchronously: %+v\n", payload)
-
-	}
-	log.Println("Payload channel closed, background worker stopped.")
 }

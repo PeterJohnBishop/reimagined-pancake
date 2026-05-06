@@ -1,8 +1,11 @@
 package webhook
 
 import (
+	"encoding/json"
 	"io"
+	"log"
 	"net/http"
+	"sync"
 
 	"github.com/gin-gonic/gin"
 )
@@ -51,4 +54,19 @@ func WebhookHandler(payloadChan chan<- Payload) gin.HandlerFunc {
 			})
 		}
 	}
+}
+
+func ProcessPayloads(ch <-chan Payload, wg *sync.WaitGroup) {
+	defer wg.Done()
+
+	for p := range ch {
+		var payload map[string]interface{}
+		err := json.Unmarshal(p.Data, &payload)
+		if err != nil {
+			log.Printf("Error: failed to unmarshal the payload")
+		}
+		log.Printf("Processing payload asynchronously: %+v\n", payload)
+		// switch on some event types or try to unmarshal
+	}
+	log.Println("Payload channel closed, background worker stopped.")
 }
