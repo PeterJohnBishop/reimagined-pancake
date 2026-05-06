@@ -22,7 +22,7 @@ func AddProtectedRoutes(protected *gin.RouterGroup, db *database.DBStore) {
 	// event
 	protected.POST("/event", handlers.StoreEventHandler(db))
 	protected.GET("/events", handlers.GetAllEventsHandler(db))
-	protected.GET("event/:id", handlers.GetEventByIDHandler(db))
+	protected.GET("/event/:id", handlers.GetEventByIDHandler(db))
 	protected.GET("/events/:type", handlers.GetEventsByTypeHandler(db))
 	protected.DELETE("/event/:id", handlers.DeleteEventHandler(db))
 }

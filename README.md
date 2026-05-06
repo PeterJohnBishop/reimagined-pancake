@@ -4,6 +4,8 @@
 docker compose up 
 
 <!-- Configure .env with connection variables -->
+## required environment variables
+
     Gin Server
     PORT=
 
@@ -26,6 +28,7 @@ cd tests && go test
 
 POST /register
 POST /login
+POST /webhook
 
 # Protected Routes
 
@@ -34,4 +37,10 @@ GET /api/users
 PUT /api/user
 PUT /api/user/password
 DELETE /api/user
+
+POST /event
+GET /events
+GET /event/:id
+GET /event/:type
+DELETE /event/:id
 
