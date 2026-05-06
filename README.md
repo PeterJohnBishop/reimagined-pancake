@@ -22,12 +22,12 @@ go test
 
 ![test screenshot](https://github.com/PeterJohnBishop/reimagined-pancake/blob/main/assets/screenshot-2026-05-03_01-33-46.png?raw=true)
 
-# open routes
+# Open Routes
 
 POST /register
 POST /login
 
-# protected routes
+# Protected Routes
 
 GET /api/user/:id
 GET /api/users

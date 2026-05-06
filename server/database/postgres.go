@@ -45,7 +45,24 @@ func (store *DBStore) CreateTables() error {
 		email VARCHAR(255) UNIQUE NOT NULL,
 		password VARCHAR(255) NOT NULL,
 		created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-	);`
+	);
+	
+	CREATE TABLE IT NOT EXISTS events (
+		id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    timestamp TIMESTAMPTZ DEFAULT NOW(),    
+    event_type VARCHAR(255) NOT NULL,       
+    data JSONB NOT NULL                     
+	);
+
+	-- Fast lookups by event type
+	CREATE INDEX idx_events_type ON events (event_type);
+
+	-- Fast sorting by time
+	CREATE INDEX idx_events_time ON events (timestamp DESC);
+
+	-- Fast searching inside the JSON payload
+	CREATE INDEX idx_events_data ON events USING GIN (data);
+	`
 
 	_, err := store.DB.Exec(query)
 	if err != nil {
